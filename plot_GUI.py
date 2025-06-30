@@ -426,7 +426,10 @@ class PlotGUI(ctk.CTk):
             fig, axs = plt.subplots(nrows=nrows, ncols=ncols, dpi=95)
             subplot_rep_locs = {}
 
-            plt.suptitle(f'{'Growth-rate\n' if gr else 'Dose-response\n'}{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
+            main_text = r"$\bf{Growth\ rate}$" if gr else r"$\bf{Dose\ response}$"
+
+
+            plt.suptitle(f'{main_text}\n{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
                          fontname='Arial',fontsize=14, fontstyle='oblique')
 
             for idx, drug in enumerate(b):
