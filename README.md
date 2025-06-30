@@ -35,6 +35,7 @@ Last updated: 6/30/25
 - Default 4 plot view
 - Manual selection Toplevel and facecolor change on selection 
 - Annotation on click
+- Parameter frame is currently hidden (can be made visible using thin gray button)
 
 ![Screenshot 2025-06-30 at 1 35 40 PM](https://github.com/user-attachments/assets/715cae8c-48d4-4252-b9ce-11b997a70acf)
 
