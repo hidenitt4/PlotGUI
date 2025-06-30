@@ -22,6 +22,7 @@ Keybinds and additional notes:
 * GR curves may error since case where GRinf is None was not handled yet.
 * For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
 * Clearing memory may still not be perfectly handled
+* If file is already selected and one clicks the file button again without selecting a file, may cause error. 
 
 
 
