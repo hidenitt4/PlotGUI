@@ -10,7 +10,7 @@ Features:
 * Selection to PDF feature
 
 * Manual selection feature on double-click (for DiaMOND)
-  
+\n
 Keybinds and additional notes: 
 * L/R arrow to navigate between display frames
 * D arrow to clear any visible plots and return to default state of GUI
