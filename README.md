@@ -21,6 +21,7 @@ Keybinds and additional notes:
 * Multiple strains OR multiple timepoints can be selected but not both
 * GR curves may error since case where GRinf is None was not handled yet.
 * For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
+* Clearing memory may still not be perfectly handled
 
 
 
