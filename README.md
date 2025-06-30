@@ -1,5 +1,5 @@
 # PlotGUI (beta-version)
-visualization GUI that takes MK DiaMOND pickle file output 
+Visualization GUI that takes MK DiaMOND pickle file output 
 
 Features: 
 * View dose response or growth rate curves
