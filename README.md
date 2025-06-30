@@ -4,7 +4,7 @@ Last updated: 6/30/25
 
 ----------------
 
-### <b>Features:<b>
+### Features:
 * View dose response or growth rate curves
   * Overlay multiple strains or timepoints on a single plot
   * 'QuickView' to see 12 plots at a time (instead of the default 4)
@@ -16,7 +16,7 @@ Last updated: 6/30/25
 
 ----------------
 
-### <b>Keybinds and additional notes:<b> 
+### Keybinds and additional notes:
 * L/R arrow to navigate between display frames
 * D arrow to clear any visible plots and return to default state of GUI
 <br>
@@ -30,7 +30,7 @@ Last updated: 6/30/25
   
 ----------------
 
-<b>Reference 1<b><br>
+### Reference 1<br>
 
 - Default 4 plot view
 - Manual selection Toplevel and facecolor change on selection 
@@ -39,9 +39,8 @@ Last updated: 6/30/25
 ![Screenshot 2025-06-30 at 1 35 40 PM](https://github.com/user-attachments/assets/715cae8c-48d4-4252-b9ce-11b997a70acf)
 
 <br>
-<br>
 
-<b>Reference 2<b><br>
+### Reference 2<br>
 
 - QuickView, 12 plot view
 - Multiple timepoint selections
