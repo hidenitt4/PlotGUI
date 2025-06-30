@@ -27,10 +27,6 @@ Visualization GUI that takes MK DiaMOND pickle file output
 * Clearing memory may still not be perfectly handled
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
   
-<br>
-<br>
-<br>
-
 ----------------
 
 <b>Reference 1<b><br>
