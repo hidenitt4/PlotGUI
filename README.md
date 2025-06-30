@@ -32,7 +32,7 @@ Last updated: 6/30/25
 
 ### Reference 1<br>
 
-- Default 4 plot view
+- Default, 4 plot view
 - Manual selection Toplevel and facecolor change on selection 
 - Annotation on click
 - Parameter frame is currently hidden (can be made visible using thin gray button)
