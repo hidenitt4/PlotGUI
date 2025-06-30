@@ -428,7 +428,6 @@ class PlotGUI(ctk.CTk):
 
             main_text = r"$\bf{Growth\ rate}$" if gr else r"$\bf{Dose\ response}$"
 
-
             plt.suptitle(f'{main_text}\n{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
                          fontname='Arial',fontsize=14, fontstyle='oblique')
 
