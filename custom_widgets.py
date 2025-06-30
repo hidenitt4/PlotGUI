@@ -305,8 +305,7 @@ class SlidingBase:
     """Base class that is meant to be inherited by widgets that slide."""
 
     def slide(self, ytarget:int, increment:int, direction:str):
-        """
-        A recursive function that creates the illusion of sliding, up or down, via multiple .place() calls.
+        """A recursive function that creates the illusion of sliding, up or down, via multiple .place() calls.
 
         :param ytarget: the pixel y-value that the slide should end
         :param increment: the pixel step-size (one can also think of this as speed)
