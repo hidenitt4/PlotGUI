@@ -149,8 +149,9 @@ class PlotGUI(ctk.CTk):
         self.pf_button = SlidingButton(master=self, x=self.width//2, y=self.height-5, width=250, height=10,
                                        command=self.slide_parameter_frame)
         # self.parameter_frame = ctk.CTkFrame(master=self, height=175,fg_color=frame_color, corner_radius=15)
-        self.parameter_frame = SlidingFrame(master=self, x=self.width//2, y=self.height, width=self.width-10,
-                                            height=175, corner_radius=15)
+        self.parameter_frame = SlidingFrame(master=self, x=self.width//2, y=self.height,fg_color=frame_color,
+                                            border_color='gray70', border_width=1, width=self.width-10, height=175,
+                                            corner_radius=15)
         self.parameter_frame.grid_rowconfigure(0, weight=1)
         self.parameter_frame.grid_columnconfigure((0,1,2,3), weight=1)
         self.parameter_frame.grid_propagate(False)
@@ -425,7 +426,7 @@ class PlotGUI(ctk.CTk):
             fig, axs = plt.subplots(nrows=nrows, ncols=ncols, dpi=95)
             subplot_rep_locs = {}
 
-            plt.suptitle(f'{'Growth-Rate\n' if gr else 'Dose-Response\n'}{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
+            plt.suptitle(f'{'Growth-rate\n' if gr else 'Dose-response\n'}{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
                          fontname='Arial',fontsize=14, fontstyle='oblique')
 
             for idx, drug in enumerate(b):
