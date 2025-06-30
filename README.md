@@ -24,6 +24,13 @@ Keybinds and additional notes:
 * Clearing memory may still not be perfectly handled
 * If file is already selected and one clicks the file button again without selecting a file, may cause error. 
 
+![Screenshot 2025-06-30 at 1 34 28 PM](https://github.com/user-attachments/assets/b54d9fb1-cb60-48bf-b8c4-86648f88f0d9)
+![Screenshot 2025-06-30 at 1 34 44 PM](https://github.com/user-attachments/assets/5943555c-fa24-43e0-8afd-0801de1d4983)
+![Screenshot 2025-06-30 at 1 35 40 PM](https://github.com/user-attachments/assets/61a9a670-de6e-41d0-b704-8fa65c9036cf)
+
+
+
+
 
 
 
