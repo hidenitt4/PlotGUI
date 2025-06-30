@@ -31,6 +31,8 @@ Visualization GUI that takes MK DiaMOND pickle file output
 <br>
 <br>
 
+----------------
+
 <b>Reference 1<b><br>
 
 - Default 4 plot view
