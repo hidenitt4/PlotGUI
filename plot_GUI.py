@@ -436,7 +436,7 @@ class PlotGUI(ctk.CTk):
                     else:
                         flat_axs = axs[idx]
                 else:
-                    flat_axs = None
+                    flat_axs = axs
 
                 rep_locs = plot(df, flat_axs, strains=self.f_strains, drug=drug, timepoints=self.f_timepoints,
                                 subplot=idx, save_type='pdf', gr=gr)
