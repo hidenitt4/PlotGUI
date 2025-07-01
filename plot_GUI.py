@@ -54,7 +54,6 @@ class PlotGUI(ctk.CTk):
         super().__init__(fg_color=root_color)
         # Base frame
         self.geometry('900x825')
-        self.resizable(False, False)
         self.title('Plot data')
         self.grid_rowconfigure(0,weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -65,6 +64,10 @@ class PlotGUI(ctk.CTk):
         self.setup_parameter_frame()
                 ### action frame
         self.setup_action_frame()
+
+        # self.resizable can limit geometry size if called before widgets are placed. 
+        self.update_idletasks()
+        self.resizable(False, False)
 
     def setup_default_state(self):
         """GUI state that is initialized upon start of the GUI and when the plots are cleared.
