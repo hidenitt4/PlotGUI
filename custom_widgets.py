@@ -26,8 +26,10 @@ class PlotFrame(ctk.CTkFrame):
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew')
-        self.cursor = None
-        self.cid = None
+
+        self.mst_cid = None
+        self.cur_cid = None
+        self.active_cursor = dict()
         self.mst = list()
         self.mapped_annotations = dict()
         self.ms_condition = any(self.subplot_rep_locs.values())
@@ -46,25 +48,55 @@ class PlotFrame(ctk.CTkFrame):
          removes any references for prophylactic garbage collection."""
 
         if state:
-            if not all([self.cursor, self.cid]):
-                self.cursor = cursor(self.fig, hover=None) #mplcursors.HoverMode.Transient
-
+            if not all([self.mst_cid, self.cur_cid]):
                 if self.ms_condition:
-                    self.cid = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+                    self.mst_cid = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
                 else:
-                    self.cid = True
+                    self.mst_cid = True
+
+                self.cur_cid = self.fig.canvas.mpl_connect('motion_notify_event', self.cursor_on_entry)
 
         else:
-            if self.cursor and self.cid:
-                self.cursor.remove()
-                self.cursor = None
-
+            if self.mst_cid and self.cur_cid:
                 if self.ms_condition:
-                    self.fig.canvas.mpl_disconnect(self.cid)
+                    self.fig.canvas.mpl_disconnect(self.mst_cid)
 
-                self.cid = None
+                self.mst_cid = None
+
+                if self.active_cursor:
+                    self.active_cursor.remove()
+                    self.active_cursor = None
+
+                self.fig.canvas.mpl_disconnect(self.cur_cid)
+                self.cur_cid = None
 
         return
+
+    def cursor_on_entry(self, event):
+        """Placeholder text"""
+
+        event_axs = event.inaxes
+
+        if event_axs:
+            if not self.active_cursor : # entering new axs
+                artists = list(event_axs.lines) + list(event_axs.collections)
+                c = cursor(artists, hover=None)
+                self.active_cursor = c
+
+                @c.connect("add")
+                def on_add(sel):
+                    sel.annotation.set_text(f"{sel.target[0]:.2f}, {sel.target[1]:.2f}")
+                    sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8, edgecolor="none")
+
+        else: # leaving axs obj
+            if self.active_cursor:
+                self.active_cursor.remove()
+
+                self.active_cursor = None
+
+        return
+
+
 
     def on_click(self, event):
         """Method that is bound to the double-click event and opens MSToplevel widget for that specific subplot."""
@@ -127,14 +159,14 @@ class PlotFrame(ctk.CTkFrame):
         collection from occurring."""
 
         # Hover feature
-        if self.cursor:
-            self.cursor.remove()
-            self.cursor = None
+        if self.active_cursor:
+            self.active_cursor.remove()
+            self.active_cursor = None
 
-        # Double-click event
-        if self.cid:
-            self.fig.canvas.mpl_disconnect(self.cid)
-            self.cid = None
+            # Double-click event
+        if self.mst_cid:
+            self.fig.canvas.mpl_disconnect(self.mst_cid)
+            self.mst_cid = None
 
         # Canvas for subplots or plot
         if self.canvas:
@@ -307,7 +339,7 @@ class SlidingBase:
     def slide(self, ytarget:int, increment:int, direction:str):
         """A recursive function that creates the illusion of sliding, up or down, via multiple .place() calls.
 
-        :param ytarget: the pixel y-value that the slide should end
+        :param ytarget: the pixel y-value that the slide should end at
         :param increment: the pixel step-size (one can also think of this as speed)
         :param direction: either UP or DOWN
         """
@@ -339,7 +371,7 @@ class SlidingBase:
 
 class SlidingButton(ctk.CTkButton, SlidingBase):
     def __init__(self, master, x, y, **kwargs):
-        super().__init__(master, font=('',1), text='------------', fg_color= 'gray',
+        super().__init__(master, font=('',1), text='', fg_color= 'gray',
                          hover_color='gray20', corner_radius=3.5, **kwargs)
         self.x = x
         self.y = y
