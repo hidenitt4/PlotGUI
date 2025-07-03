@@ -24,9 +24,11 @@ Last updated: 7/2/25
 * For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
 
 ### Known bugs: 
-* GR curves may error since case where GRinf is None was not handled yet.
+* GR curves may error since case where GRinf is None is not handled yet.
 * Clearing memory may still not be perfectly handled
+* Cursor (annotations) should be functional but working on improving logic. 
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
+  
   
 ----------------
 
