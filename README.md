@@ -1,6 +1,6 @@
 # PlotGUI (beta-version)
 Visualization GUI that takes MK DiaMOND pickle (.pkl) file output. <br>
-Last updated: 7/2/25
+Last updated: 7/3/25
 
 ----------------
 
