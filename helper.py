@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.stats import shapiro, mannwhitneyu,levene
 import matplotlib, scipy, subprocess, os
+matplotlib.use('TkAgg')
 from matplotlib.backends.backend_pdf import PdfPages
 from fit import Fit
-
-matplotlib.use('Agg')
 
 
 def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
@@ -35,7 +34,6 @@ def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
     strain_palette = dict(zip(sorted(strains),colors[:len(strains)]))
     timepoint_palette = dict(zip(sorted(timepoints),colors[:len(timepoints)]))
 
-    # strain_colors = {'EL': 'magenta', 'H37Rv': 'blue', 'bioA': 'red', 'bioBop': 'mediumseagreen'}
     f = Fit()
     seen_strains = seen_timepoints = set()
     rep_locs = list()
@@ -43,7 +41,7 @@ def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
     # Row indices for all (three) replicates matching the specified strain(s), drug, and timepoint(s) criteria
     row_indices = df[(df['Drug'] == drug) & (df['Strain'].isin(strains)) & (df['Timepoint'].isin(timepoints))].index
 
-    for i, row_idx in enumerate(row_indices): # for each replicate, for each strain
+    for i, row_idx in enumerate(row_indices): # for each replicate, for each strain, for each timepoint
         row = df.loc[row_idx]
         strain = row['Strain']
         timepoint = row['Timepoint']
@@ -75,34 +73,36 @@ def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
         else:
             return "Can't have multiple strains AND timepoints!"
 
+        # x,y for scatter plot
         x = row['Volume']
         y = row['Growth Inhibitions'] if not gr else row['gr']['norm_gr']
 
+        # Allows/ensures indexing of axs obj
         if isinstance(axs, np.ndarray): # checks for existence of subplot
             if axs.ndim == 2: # if more than one row to display plots
                 axs = axs.flatten()[subplot]
             else:
                 axs = axs[subplot]
 
-        if algo is not None:
-            if gr:
-                grinf = row['gr']['Einf']
-                ec50 = row['gr']['EC50']
-                hill_slope = row['gr']['Hill Slope']
+        # Conditionals for whether a curve fit exists for dose response or growth rate
+        if gr and (grinf := row['gr']['Einf']):
+            ec50 = row['gr']['EC50']
+            hill_slope = row['gr']['Hill Slope']
 
-                y_pred = f.GR_Hill(x, grinf, ec50, hill_slope)
-            else:
+            y_pred = f.GR_Hill(x, grinf, ec50, hill_slope)
+            axs.plot(np.log10(x), y_pred, color=color, ls='--', label=legend_label, alpha=0.5)  # curve fit only if algo
+
+        else:
+            if algo:
                 einf = row[algo]['Einf']
                 ec50 = row[algo]['EC50']
                 hill_slope = row[algo]['Hill Slope']
 
                 y_pred = f.Hill(np.array(x), einf, ec50, hill_slope)
-
-            axs.plot(np.log10(x), y_pred, color=color, ls='--', label=legend_label, alpha=0.5)
+                axs.plot(np.log10(x), y_pred, color=color, ls='--', label=legend_label, alpha=0.5) # curve fit only if algo
 
         axs.scatter(np.log10(x), y, marker='o', color=color, antialiased=False, alpha=0.6)
         axs.grid(color='white', linestyle='-.', linewidth=0.9, alpha=0.9)
-
 
     if save_type == 'pdf':
         axs.set_title(f"{drug}")
