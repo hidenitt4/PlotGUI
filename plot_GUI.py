@@ -4,12 +4,7 @@
 
 # PlotGUI
 # TODO: combos with certain drugs (e.g. all BDQ drugs)
-# TODO: fix self.destroy_display_frames() method bugging when Label/MSToplevel is created
 # TODO: getting rid if vestigials after hitting "run"
-
-# Manual selection
-# TODO: checkbox state is locked for instances of algo is None (no curve fit) or not plotted
-# TODO: manual selection dropdown and associated action
 
 # GUI hub
 # TODO: Make central GUI portal (dropdown) in order to select between multiple different DiaMOND tools.
@@ -17,6 +12,8 @@
 # DiaMOND
 # TODO: simple GUI to run initial DiaMOND on data
 
+import matplotlib
+matplotlib.use('TkAgg')
 import customtkinter as ctk
 from customtkinter import filedialog
 from pathlib import Path
@@ -24,12 +21,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import matplotlib, gc, objgraph, os, subprocess, time, threading
-import matplotlib.style as mplstyle
+import gc, objgraph, os, subprocess, time, threading
 from helper import plot, generate_plot_images
 from custom_widgets import PlotFrame, ParameterCheckbox, MSToplevel, LabelToplevel, SlidingButton, SlidingFrame
 
-matplotlib.use('Agg')
 ctk.set_appearance_mode('light')
 ctk.set_default_color_theme('green')
 
@@ -54,6 +49,7 @@ class PlotGUI(ctk.CTk):
         super().__init__(fg_color=root_color)
         # Base frame
         self.geometry('900x825')
+        self.resizable(False, False)
         self.title('Plot data')
         self.grid_rowconfigure(0,weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -65,7 +61,7 @@ class PlotGUI(ctk.CTk):
                 ### action frame
         self.setup_action_frame()
 
-        # self.resizable can limit geometry size if called before widgets are placed. 
+        # self.resizable can limit geometry size if called before widgets are placed.
         self.update_idletasks()
         self.resizable(False, False)
 
@@ -93,7 +89,7 @@ class PlotGUI(ctk.CTk):
 
         if hasattr(self, 'temp_frame'):
             self.temp_frame.tkraise()
-            self.qv_switch.tkraise()
+            self.subplot_count_sbutton.tkraise()
             self.pf_button.tkraise()
 
             if self.slide_visible:
@@ -103,15 +99,16 @@ class PlotGUI(ctk.CTk):
 
         else:
             # Frame to display blank plot
-            self.temp_frame = ctk.CTkFrame(master=self, height=650)
+            self.temp_frame = ctk.CTkFrame(master=self)
             self.temp_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
             self.temp_frame.grid_rowconfigure(0, weight=1)
             self.temp_frame.grid_columnconfigure(0, weight=1)
 
             # QuickView switch (to see either 4 or 12 plots per frame)
-            quickview_var = ctk.BooleanVar()
-            self.qv_switch = ctk.CTkSwitch(master=self, text='QuickView', variable=quickview_var)
-            self.qv_switch.place(relx=1.0,y=5,anchor='ne',x=-10)
+            values = [4,6,12]
+            self.subplot_count_sbutton = ctk.CTkSegmentedButton(master=self, values=values)
+            self.subplot_count_sbutton.set(4)
+            self.subplot_count_sbutton.place(relx=1.0,y=5,anchor='ne',x=-10)
 
             # Accessory plot
             fig, axs = plt.subplots(1, 1)
@@ -216,7 +213,7 @@ class PlotGUI(ctk.CTk):
         return
 
     def update_progress(self, total_batches):
-        """Info here"""
+        """Updates progress bar as each frame is constructed"""
 
         step_size = (100/total_batches)/100
         current = self.progress_bar.get()
@@ -230,6 +227,9 @@ class PlotGUI(ctk.CTk):
         return
 
     def slide_parameter_frame(self):
+        """Responsible for sliding animation for self.pf_button and self.parameter_frame. Controls speed and heights of
+        different states."""
+
         increment = 30
         up_state = self.height-175
         down_state = self.height
@@ -396,39 +396,43 @@ class PlotGUI(ctk.CTk):
          per frame if QuickView switch is selected. User inputs for drugs, strains, and timepoints are used in order to
          filter data that is displayed on the canvas. Method that is called after self.get_user_inputs()."""
 
+        # Reset and initialize objects/variables
+        self.progress_bar.set(0)
+        self.progress_bar.update_idletasks()
         self.current_frame_idx = 0
         self.display_frames = dict()
 
         df = self.df[self.df['Timepoint'].isin(self.f_timepoints)]
         gr = True if self.dropdown_var.get() == 'Growth rate' else False
-        has_combo = any('+' in d for d in self.f_drugs)
-        quickview = False
 
         # Plot specifications and conditionals
         if len(self.f_drugs) == 1:
             nrows = ncols = 1
             batch_size = 1
 
-        elif self.qv_switch.get():
-            quickview = True
-            batch_size = 12
-            nrows,ncols = 4,3
+        num_plots = self.subplot_count_sbutton.get()
 
-        else:
-            batch_size = 4
-            nrows = ncols = 2
+        # Adjust plots per frame depending on user input (segmented button)
+        match num_plots:
+            case 4:
+                batch_size = 4
+                nrows = ncols = 2
+
+            case 6:
+                batch_size = 6
+                nrows,ncols = 3,2
+
+            case 12:
+                batch_size = 12
+                nrows, ncols = 4, 3
+
 
         batches = [self.f_drugs[i:i + batch_size] for i in range(0, len(self.f_drugs), batch_size)]
-
-        self.progress_bar.set(0)
-        self.progress_bar.update_idletasks()
-
 
         # Construction of self.display_frames according to user specifications
         for i, b in enumerate(batches): # each batch is a subplot and a frame
             fig, axs = plt.subplots(nrows=nrows, ncols=ncols, dpi=95)
             subplot_rep_locs = {}
-
             main_text = r"$\bf{Growth\ rate}$" if gr else r"$\bf{Dose\ response}$"
 
             plt.suptitle(f'{main_text}\n{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
@@ -443,32 +447,46 @@ class PlotGUI(ctk.CTk):
                 else:
                     flat_axs = axs
 
+                # Plot and retrieve integer-label (.loc) of replicates
                 rep_locs = plot(df, flat_axs, strains=self.f_strains, drug=drug, timepoints=self.f_timepoints,
                                 subplot=idx, save_type='pdf', gr=gr)
 
+                # Store in a dictionary that maps it to the respective axs obj
                 subplot_rep_locs.update({flat_axs: rep_locs})
 
-                if quickview:
-                    # Plot specifications for QuickView (12 plots per frame)
-                    flat_axs.xaxis.label.set_visible(False)
-                    flat_axs.yaxis.label.set_visible(False)
+                # Subplot specifications depending on plots per frame
+                match num_plots:
+                    case 4:
+                        flat_axs.title.set_fontsize(12)
+                        flat_axs.xaxis.label.set_fontsize(9)
+                        flat_axs.yaxis.label.set_fontsize(9)
+                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+                    case 6:
+                        flat_axs.title.set_fontsize(12)
+                        flat_axs.xaxis.label.set_fontsize(8)
+                        flat_axs.yaxis.label.set_fontsize(8)
 
-                    flat_axs.legend(frameon=False,fontsize=7)
-                    flat_axs.title.set_fontsize(10)
+                        for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
+                            label.set_fontsize(10)
 
-                    for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
-                        label.set_fontsize(7)
+                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+                    case 12:
+                        flat_axs.title.set_fontsize(10)
+                        flat_axs.xaxis.label.set_visible(False)
+                        flat_axs.yaxis.label.set_visible(False)
+                        flat_axs.legend(frameon=False, fontsize=7)
 
-                    plt.subplots_adjust(hspace=0.4, wspace=0.3)
-                    
-                else:
-                    plt.subplots_adjust(hspace=0.5, wspace=0.4)
+                        for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
+                            label.set_fontsize(7)
+
+                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
 
             self.update_progress(len(batches))
 
             frame = PlotFrame(master=self, fig=fig, subplot_rep_locs=subplot_rep_locs)
 
-            if has_combo: # manual selection is only used for singles
+
+            if (has_combo := any('+' in d for d in self.f_drugs)):# manual selection is only used for singles
                 frame.ms_condition = False
 
             plt.close(fig)
@@ -477,7 +495,7 @@ class PlotGUI(ctk.CTk):
         initial_display = self.display_frames[self.current_frame_idx]
         initial_display.toggle_event_listeners(state=True)
         initial_display.tkraise()
-        self.qv_switch.tkraise()
+        self.subplot_count_sbutton.tkraise()
         self.pf_button.tkraise()
 
         if self.slide_visible:
@@ -495,7 +513,8 @@ class PlotGUI(ctk.CTk):
 
         generate_plot_images(df, drugs=self.f_drugs, strains=self.f_strains, timepoints=self.f_timepoints,
                              save_path=save_path, save_type='pdf')
-        LabelToplevel(master=self, title='Success', text='Selected plots saved in Downloads')
+        LabelToplevel(master=self, title='Success', text='Selected plots saved in Downl'
+                                                         'oads')
         self.after(200)
 
         return
@@ -557,7 +576,7 @@ class PlotGUI(ctk.CTk):
             next_frame.toggle_event_listeners(state=True)
 
             next_frame.tkraise()
-            self.qv_switch.tkraise()
+            self.subplot_count_sbutton.tkraise()
             self.pf_button.tkraise()
 
             if self.slide_visible:
