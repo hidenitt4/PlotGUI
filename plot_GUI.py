@@ -5,6 +5,8 @@
 # PlotGUI
 # TODO: combos with certain drugs (e.g. all BDQ drugs)
 # TODO: getting rid if vestigials after hitting "run"
+# TODO: blitting for 12 subplots
+# TODO: recursive self.after() calls for plot() function
 
 # GUI hub
 # TODO: Make central GUI portal (dropdown) in order to select between multiple different DiaMOND tools.
@@ -405,27 +407,24 @@ class PlotGUI(ctk.CTk):
         df = self.df[self.df['Timepoint'].isin(self.f_timepoints)]
         gr = True if self.dropdown_var.get() == 'Growth rate' else False
 
-        # Plot specifications and conditionals
+        # One drug, one plot
         if len(self.f_drugs) == 1:
             nrows = ncols = 1
             batch_size = 1
 
         num_plots = self.subplot_count_sbutton.get()
 
-        # Adjust plots per frame depending on user input (segmented button)
+        # Plot shaped based on user specifications (segmented button)
         match num_plots:
             case 4:
                 batch_size = 4
                 nrows = ncols = 2
-
             case 6:
                 batch_size = 6
                 nrows,ncols = 3,2
-
             case 12:
                 batch_size = 12
                 nrows, ncols = 4, 3
-
 
         batches = [self.f_drugs[i:i + batch_size] for i in range(0, len(self.f_drugs), batch_size)]
 
@@ -447,20 +446,12 @@ class PlotGUI(ctk.CTk):
                 else:
                     flat_axs = axs
 
-                # Plot and retrieve integer-label (.loc) of replicates
-                rep_locs = plot(df, flat_axs, strains=self.f_strains, drug=drug, timepoints=self.f_timepoints,
-                                subplot=idx, save_type='pdf', gr=gr)
-
-                # Store in a dictionary that maps it to the respective axs obj
-                subplot_rep_locs.update({flat_axs: rep_locs})
-
                 # Subplot specifications depending on plots per frame
                 match num_plots:
                     case 4:
                         flat_axs.title.set_fontsize(12)
                         flat_axs.xaxis.label.set_fontsize(9)
                         flat_axs.yaxis.label.set_fontsize(9)
-                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
                     case 6:
                         flat_axs.title.set_fontsize(12)
                         flat_axs.xaxis.label.set_fontsize(8)
@@ -468,8 +459,6 @@ class PlotGUI(ctk.CTk):
 
                         for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
                             label.set_fontsize(10)
-
-                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
                     case 12:
                         flat_axs.title.set_fontsize(10)
                         flat_axs.xaxis.label.set_visible(False)
@@ -479,12 +468,17 @@ class PlotGUI(ctk.CTk):
                         for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
                             label.set_fontsize(7)
 
-                        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+                # Plot and retrieve integer-label (.loc) of replicates
+                rep_locs = plot(df, flat_axs, strains=self.f_strains, drug=drug, timepoints=self.f_timepoints,
+                                subplot=idx, save_type='pdf', gr=gr)
+
+                # Store in a dictionary that maps it to the respective axs obj
+                subplot_rep_locs.update({flat_axs: rep_locs})
 
             self.update_progress(len(batches))
 
+            plt.subplots_adjust(hspace=0.4, wspace=0.3)
             frame = PlotFrame(master=self, fig=fig, subplot_rep_locs=subplot_rep_locs)
-
 
             if (has_combo := any('+' in d for d in self.f_drugs)):# manual selection is only used for singles
                 frame.ms_condition = False
@@ -501,7 +495,7 @@ class PlotGUI(ctk.CTk):
         if self.slide_visible:
             self.parameter_frame.tkraise()
 
-        self.after(100)
+        self.after(50)
 
         return
 
@@ -515,7 +509,7 @@ class PlotGUI(ctk.CTk):
                              save_path=save_path, save_type='pdf')
         LabelToplevel(master=self, title='Success', text='Selected plots saved in Downl'
                                                          'oads')
-        self.after(200)
+        self.after(50)
 
         return
 
