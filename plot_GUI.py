@@ -596,7 +596,8 @@ class PlotGUI(ctk.CTk):
         return
 
     def destroy_checkboxes(self):
-
+         """Destroys checkboxes and gets rid of any references."""
+        
         if hasattr(self, 'checkboxes'):  # destroy checkboxes
             for val in self.checkboxes.values():
                 if isinstance(val, list):
