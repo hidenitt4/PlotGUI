@@ -23,11 +23,10 @@ Last updated: 7/3/25
 * Multiple strains OR multiple timepoints can be selected but not both
 * For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
 
-### Known bugs: 
-* GR curves may error since case where GRinf is None is not handled yet.
+### Known bugs:
 * Clearing memory may still not be perfectly handled
-* Cursor (annotations) should be functional but working on improving logic. 
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
+* r/f-strings incompatibility with some computers
   
   
 ----------------
