@@ -1,5 +1,6 @@
 # PlotGUI (beta-version)
 Visualization GUI that takes MK DiaMOND pickle (.pkl) file output. <br>
+Internal name: "Margarine", sister product of "Butter" <br>
 Last updated: 7/3/25
 
 ----------------
