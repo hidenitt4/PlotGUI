@@ -49,8 +49,6 @@ Last updated: 7/3/25
 - Multiple timepoint selections
 - Parameter frame is currently visible (can be hidden from view using thin gray button)
 
-![Screenshot 2025-06-30 at 1 34 28 PM](https://github.com/user-attachments/assets/afb47129-aaa8-40a9-b1f9-efbe215f5da2)
-
 
 
 
