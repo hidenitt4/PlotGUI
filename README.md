@@ -35,7 +35,7 @@ Last updated: 7/3/25
 ### Reference 1<br>
 
 - Previous, but still relevant version of GUI (QuickView is replaced by segmented button to select either 4, 6, or 12 plot views)
-- Default, 4 plot view 
+- QuickView is off. Default: 4 plot view 
 - Manual selection Toplevel and facecolor change on selection 
 - Annotation on click
 - Parameter frame is currently hidden (can be made visible using thin gray button)
