@@ -8,7 +8,7 @@ Last updated: 7/3/25
 ### Features:
 * View dose response or growth rate curves
   * Overlay multiple strains or timepoints on a single plot
-  * Segmented button to to see 4, 6, or 12 plots at a time (with varying functionalities)
+  * Segmented button to to see 4, 6, or 12 plots at a time (with varying mplcursors functionality)
   * Annotations on click 
 
 * Selection to PDF feature
