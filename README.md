@@ -34,7 +34,8 @@ Last updated: 7/3/25
 
 ### Reference 1<br>
 
-- Default, 4 plot view
+- Previous, but still relevant version of GUI (QuickView is replaced by segmented button to select either 4, 6, or 12 plot views)
+- Default, 4 plot view 
 - Manual selection Toplevel and facecolor change on selection 
 - Annotation on click
 - Parameter frame is currently hidden (can be made visible using thin gray button)
@@ -45,12 +46,12 @@ Last updated: 7/3/25
 
 ### Reference 2<br>
 
-- QuickView, 12 plot view
-- Multiple timepoint selections
+- Most up-to-date version of GUI
+- Segmented button. Current: 12 plot view 
+- Multiple strains selected
 - Parameter frame is currently visible (can be hidden from view using thin gray button)
 
-
-
+<img width="893" height="849" alt="Screenshot 2025-07-30 at 4 38 59 PM" src="https://github.com/user-attachments/assets/b116c8d6-6255-401d-9478-639a1bd8ba4b" />
 
 <br>
 
