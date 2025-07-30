@@ -27,6 +27,7 @@ Last updated: 7/3/25
 ### Known bugs:
 * Clearing memory may still not be perfectly handled
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
+* Use of plt.subplots when selecting individual drug instead of plt.figure
 * r/f-strings incompatibility with some computers
   
   
