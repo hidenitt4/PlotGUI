@@ -24,7 +24,7 @@ Last updated: 7/3/25
 * Multiple strains OR multiple timepoints can be selected but not both
 * For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
 
-### Known bugs:
+### Known bugs (to be fixed):
 * Clearing memory may still not be perfectly handled
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
 * Use of plt.subplots when selecting individual drug instead of plt.figure
