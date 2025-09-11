@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from jinja2.compiler import generate
 from matplotlib import cm
 from scipy.stats import shapiro, mannwhitneyu,levene
 import matplotlib, scipy, subprocess, os
@@ -11,6 +12,15 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_pdf import PdfPages
 from fit import Fit
 
+plt.rcParams.update({
+    'figure.facecolor': '#eceff4',
+    'axes.facecolor': '#d8dee9',
+    'axes.edgecolor': '#eceff4',
+    'grid.color': '#d9e2ec',
+    'xtick.color': '#627d98',
+    'ytick.color': '#627d98',
+    'text.color': '#455669',
+})
 
 def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
          strains: list | np.ndarray, timepoints: list | np.ndarray, subplot: int = 0, save_type=None,
@@ -114,7 +124,7 @@ def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
 
     return rep_locs
 
-def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=None):
+def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=None,gr=False):
     """"Generates individual dose response plot as png or as a batch of 3 plots per page in a pdf file
 
         Keyword arguments:
@@ -135,7 +145,8 @@ def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=No
 
                 for idx, drug in enumerate(b):
                     plot(df, axs, strains=strains, drug=drug, timepoints=timepoints,
-                         subplot=idx, save_type='pdf', gr=False)
+                         subplot=idx, save_type='pdf', gr=gr)
+                    axs[idx].set_facecolor('#EAEAF2')
                 pdf.savefig(fig)
                 plt.close(fig)
 
@@ -143,7 +154,8 @@ def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=No
 
         for idx, d in enumerate(drugs):
             fig, axs = plt.subplots(1, 1, facecolor='white')
-            plot(df, axs, drug = d, strains = strains, subplot=0)
+            plot(df, axs, drug = d, strains = strains, timepoints=timepoints, subplot=0,gr=gr)
+            axs.set_facecolor('#EAEAF2')
             fig.savefig(save_path + f"{", ".join(strains)}_{d}.png")
             plt.close(fig)
 
@@ -217,8 +229,5 @@ def intersection_filter(df1, df2):
 
     return df1[df1['Drug'].isin(intersection)], df2[df2['Drug'].isin(intersection)]
 
-
-
 if __name__ == "__main__":
     print('helper.py was run')
-
