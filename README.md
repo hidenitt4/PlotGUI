@@ -29,7 +29,7 @@ Last updated: 7/3/25
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
 * Use of plt.subplots when selecting individual drug instead of plt.figure
 * Selection to PDF only saves dose response curves and not growth rate
-* r/f-strings incompatibility with some computers
+* r/f-strings string delimiter conflict
   
   
 ----------------
