@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mplcursors import cursor
 
+# make sure to destroy textbox once created...
+
 
 class PlotFrame(ctk.CTkFrame):
     """Frame that contains the id/location for the respective data that is displayed on subplots (or a plot in the case
@@ -93,7 +95,7 @@ class PlotFrame(ctk.CTkFrame):
 
                 if not self.active_cursor:
                     # Dynamic cursor artists dependent on number of subplots per frame for best performance
-                    artists = (list(event_axs.lines) if self.num_axes <=6 else list()) + (list(event_axs.collections)
+                    artists = (list(event_axs.lines) if self.num_axes <=9 else list()) + (list(event_axs.collections)
                                                                               if self.num_axes <=4 else list())
                     if artists:
                         c = cursor(artists, hover=None)
@@ -275,7 +277,15 @@ class MSToplevel(ctk.CTkToplevel):
 
                 self.checkboxes.append(checkbox)
 
-        self.grid_rowconfigure(tuple(x for x in range(num_of_reps+1)), weight=1)
+        if num_of_reps == 1:
+            textbox = ctk.CTkEntry(master=self) # for entries
+            textbox.grid(row=1, column=0, padx=5, pady=5)
+            self.close_button.grid(row=2, column=0, padx=5, pady=5) # re-order close button to last row
+
+            self.grid_rowconfigure((0,1,2), weight=1)
+        else:
+            self.grid_rowconfigure(tuple(x for x in range(num_of_reps+1)), weight=1)
+
         self.grid_columnconfigure(0, weight=1)
 
         return

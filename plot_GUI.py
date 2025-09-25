@@ -23,7 +23,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import gc, objgraph, os, subprocess, time, threading
+import gc, os, subprocess
 from helper import plot, generate_plot_images
 from custom_widgets import PlotFrame, ParameterCheckbox, MSToplevel, LabelToplevel, SlidingButton, SlidingFrame
 
@@ -35,7 +35,7 @@ plt.rcParams.update({
     'figure.facecolor': '#eceff4',
     'axes.facecolor': '#d8dee9',
     'axes.edgecolor': '#eceff4',
-    'grid.color': '#d9e2ec' ,
+    'grid.color': '#d9e2ec',
     'xtick.color': '#627d98',
     'ytick.color': '#627d98',
     'text.color': '#455669',
@@ -46,21 +46,24 @@ root_color = '#eceff4'
 frame_color = '#d8dee9'
 widget_color = '#eceff4'
 
+
 class PlotGUI(ctk.CTk):
     def __init__(self):
         super().__init__(fg_color=root_color)
         # Base frame
-        self.geometry('900x825')
-        self.resizable(False, False)
+        usable_height = self.winfo_screenheight() - 135 # account for taskbar
+        self.geometry(f"{int(usable_height*1.14)}x{usable_height}") # geometry expects an int, not float
+        # self.geometry('975x855')
         self.title('Plot data')
-        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-            ## plot frame
+        ## plot frame
         self.setup_default_state()
-            ## parameter frame
+        ## parameter frame
         self.setup_parameter_frame()
-                ### action frame
+        self.bind('<space>', lambda event: self.slide_parameter_frame())
+        ### action frame
         self.setup_action_frame()
 
         # self.resizable can limit geometry size if called before widgets are placed.
@@ -81,9 +84,9 @@ class PlotGUI(ctk.CTk):
             self.checkboxes['all_singles'].set(False)
             self.checkboxes['all_combos'].set(False)
 
-        # Clearing any other selections by accessing tuple in (idx, ParameterCheckbox) form
+            # Clearing any other selections by accessing tuple in (idx, ParameterCheckbox) form
             for key, parameter in self.checkboxes.items():
-                if key in ['drugs','strains','timepoints']:
+                if key in ['drugs', 'strains', 'timepoints']:
                     for checkbox_info in parameter:
                         checkbox = checkbox_info[1]
                         if checkbox.get():
@@ -92,6 +95,7 @@ class PlotGUI(ctk.CTk):
         if hasattr(self, 'temp_frame'):
             self.temp_frame.tkraise()
             self.subplot_count_sbutton.tkraise()
+            self.partition_plot_switch.tkraise()
             self.pf_button.tkraise()
 
             if self.slide_visible:
@@ -99,18 +103,23 @@ class PlotGUI(ctk.CTk):
 
             self.progress_bar.set(0)
 
-        else:
+        else: # initial launch of GUI
             # Frame to display blank plot
             self.temp_frame = ctk.CTkFrame(master=self)
             self.temp_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
             self.temp_frame.grid_rowconfigure(0, weight=1)
             self.temp_frame.grid_columnconfigure(0, weight=1)
 
-            # QuickView switch (to see either 4 or 12 plots per frame)
-            values = [4,6,12]
+            # Layout buttons (to see either 4, 6, or 12 plots per frame)
+            values = [4, 9, 16]
             self.subplot_count_sbutton = ctk.CTkSegmentedButton(master=self, values=values)
             self.subplot_count_sbutton.set(4)
-            self.subplot_count_sbutton.place(relx=1.0,y=5,anchor='ne',x=-10)
+            self.subplot_count_sbutton.place(relx=1.0, y=5, anchor='ne', x=-10)
+
+            # Toggle between superimposition or partitioning of plots
+            self.partition_plot_var = ctk.BooleanVar()
+            self.partition_plot_switch = ctk.CTkSwitch(master=self, text='Partition', variable=self.partition_plot_var)
+            self.partition_plot_switch.place(relx=0, y=5, anchor='nw', x=10)
 
             # Accessory plot
             fig, axs = plt.subplots(1, 1)
@@ -123,12 +132,14 @@ class PlotGUI(ctk.CTk):
             plt.close(fig)
 
             # Initializing progress bar for when rendering large dataframe selections
-            self.progress_bar = ctk.CTkProgressBar(master=self.temp_frame,orientation='horizontal',width=450,height=22,
-                                              corner_radius=20,border_width=2,border_color='#d8dee9',fg_color='#eceff4',
-                                              bg_color='#d8dee9',mode='determinate',determinate_speed=5,
-                                              indeterminate_speed=0.5)
+            self.progress_bar = ctk.CTkProgressBar(master=self.temp_frame, orientation='horizontal', width=450,
+                                                   height=22,
+                                                   corner_radius=20, border_width=2, border_color='#d8dee9',
+                                                   fg_color='#eceff4',
+                                                   bg_color='#d8dee9', mode='determinate', determinate_speed=5,
+                                                   indeterminate_speed=0.5)
 
-            self.progress_bar.place(x=230,y=525)
+            self.progress_bar.place(x=260, y=525)
             self.progress_bar.set(0)
 
         return
@@ -144,30 +155,31 @@ class PlotGUI(ctk.CTk):
         self.after(10)
         self.width = self.winfo_width()
         self.height = self.winfo_height()
-        print(self.width,self.height)
         self.slide_visible = False
 
-
-        self.pf_button = SlidingButton(master=self, x=self.width//2, y=self.height-5, width=250, height=10,
+        self.pf_button = SlidingButton(master=self, x=self.width // 2, y=self.height - 5, width=250, height=10,
                                        command=self.slide_parameter_frame)
         # self.parameter_frame = ctk.CTkFrame(master=self, height=175,fg_color=frame_color, corner_radius=15)
-        self.parameter_frame = SlidingFrame(master=self, x=self.width//2, y=self.height,fg_color=frame_color,
-                                            border_color='gray70', border_width=1, width=self.width-10, height=175,
+        self.parameter_frame = SlidingFrame(master=self, x=self.width // 2, y=self.height, fg_color=frame_color,
+                                            border_color='gray70', border_width=1, width=self.width - 10, height=175,
                                             corner_radius=15)
         self.parameter_frame.grid_rowconfigure(0, weight=1)
-        self.parameter_frame.grid_columnconfigure((0,1,2,3), weight=1)
+        self.parameter_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
         self.parameter_frame.grid_propagate(False)
 
         # drug scrollable
-        self.drugs_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160, fg_color=widget_color, corner_radius=15)
+        self.drugs_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160, fg_color=widget_color,
+                                                       corner_radius=15)
         self.drugs_scrollable.grid(row=0, column=0, padx=7, pady=7, sticky='e')
 
         # strain scrollable
-        self.strains_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160, fg_color=widget_color, corner_radius=15)
+        self.strains_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160, fg_color=widget_color,
+                                                         corner_radius=15)
         self.strains_scrollable.grid(row=0, column=1, padx=7, pady=7)
 
         # timepoint scrollable
-        self.timepoints_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160, fg_color=widget_color, corner_radius=15)
+        self.timepoints_scrollable = ctk.CTkScrollableFrame(master=self.parameter_frame, height=160,
+                                                            fg_color=widget_color, corner_radius=15)
         self.timepoints_scrollable.grid(row=0, column=2, padx=7, pady=7, sticky='w')
 
         return
@@ -202,8 +214,9 @@ class PlotGUI(ctk.CTk):
         # Options for creating specifying type of plot, etc.
         self.dropdown_var = ctk.StringVar(value="Dose response")
 
+        dropdown_options = ['Dose response', 'Growth rate', 'Save to PDF', 'Save to PNGs', 'Manual selection']
         self.dropdowns = ctk.CTkOptionMenu(master=self.generation_frame,
-                                           values=['Dose response','Growth rate','Save to PDF','Manual select.'],
+                                           values=dropdown_options,
                                            variable=self.dropdown_var)
         self.dropdowns.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky='ew')
 
@@ -217,7 +230,7 @@ class PlotGUI(ctk.CTk):
     def update_progress(self, total_batches):
         """Updates progress bar as each frame is constructed"""
 
-        step_size = (100/total_batches)/100
+        step_size = (100 / total_batches) / 100
         current = self.progress_bar.get()
 
         if current < 1:
@@ -233,17 +246,17 @@ class PlotGUI(ctk.CTk):
         different states."""
 
         increment = 30
-        up_state = self.height-175
+        up_state = self.height - 175
         down_state = self.height
 
         if self.slide_visible:
-            self.pf_button.slide(ytarget=down_state-5, increment=increment, direction='DOWN')
+            self.pf_button.slide(ytarget=down_state - 5, increment=increment, direction='DOWN')
             self.parameter_frame.slide(ytarget=down_state, increment=increment, direction='DOWN')
 
             self.slide_visible = False
 
         else:
-            self.pf_button.slide(ytarget=up_state-5, increment=increment, direction='UP')
+            self.pf_button.slide(ytarget=up_state - 5, increment=increment, direction='UP')
             self.parameter_frame.tkraise()
             self.parameter_frame.slide(ytarget=up_state, increment=increment, direction='UP')
 
@@ -258,16 +271,16 @@ class PlotGUI(ctk.CTk):
         self.setup_default_state()
         initial_path = Path.home() / 'Downloads'
         self.file_path = filedialog.askopenfilename(title='Select file',
-                                               filetypes=[("Pickle files", "*.pkl")],
-                                               initialdir=f'{initial_path}')
+                                                    filetypes=[("Pickle files", "*.pkl")],
+                                                    initialdir=f'{initial_path}')
 
         self.destroy_checkboxes()
 
-        if self.slide_visible: # should be True
+        if self.slide_visible:  # should be True
             self.parameter_frame.tkraise()
 
         if self.file_path:
-            self.file_button.configure(text='File selected',fg_color='gray26')
+            self.file_button.configure(text='File selected', fg_color='gray26')
 
             self.df = pd.read_pickle(self.file_path)
             self.df_drugs = self.df['Drug'].unique()
@@ -279,7 +292,7 @@ class PlotGUI(ctk.CTk):
             self.generate_checkbox_scrollables()
 
         else:
-           pass
+            pass
 
         return
 
@@ -302,14 +315,14 @@ class PlotGUI(ctk.CTk):
         # Checkboxes for all drugs (singles and combinations), strains, and timepoints
         for idx1, parameter in enumerate([self.df_drugs, self.df_strains, self.df_timepoints]):
             key = self.idx1_map[idx1]
-            offset = 2 if idx1==0 else 0
+            offset = 2 if idx1 == 0 else 0
 
             self.checkboxes.update({key: []})
 
-            for idx2, p in enumerate(parameter,start=offset):
-                checkbox = ParameterCheckbox(master=frames[idx1],row=idx2,text=str(p))
+            for idx2, p in enumerate(parameter, start=offset):
+                checkbox = ParameterCheckbox(master=frames[idx1], row=idx2, text=str(p))
 
-                self.checkboxes[key].append(((idx2-offset), checkbox))
+                self.checkboxes[key].append(((idx2 - offset), checkbox))
 
         return
 
@@ -324,7 +337,7 @@ class PlotGUI(ctk.CTk):
         if hasattr(self, 'checkboxes'):
             singles_clicked = self.checkboxes['all_singles'].get()
             combos_clicked = self.checkboxes['all_combos'].get()
-            filter_list = lambda a, b: list(np.array(a)[b]) # returns list of a which satisfies b
+            filter_list = lambda a, b: list(np.array(a)[b])  # returns list of a which satisfies b
 
             # If both, 1-way, or 2-way selected
             if singles_clicked and combos_clicked:
@@ -370,12 +383,10 @@ class PlotGUI(ctk.CTk):
                     self.bind('<Right>', lambda event: self.next_frame('R'))
                     self.bind('<Down>', lambda event: self.setup_default_state())
 
-                    self.construct_display_frames()
-                    # t = threading.Thread(target=self.construct_display_frames,daemon=True)
-                    # t.start()
+                    self.initialize_display_frames()
 
-                case 'Save to PDF':
-                    self.selection_to_pdf()
+                case 'Save to PDF' | 'Save to PNGs':
+                    self.save_selections()
 
                 case 'Manual select.':
                     self.get_user_inputs()
@@ -384,7 +395,7 @@ class PlotGUI(ctk.CTk):
                         LabelToplevel(master=self, title='Error',
                                       text='Please select 1-way combinations\n for manual selection')
                     elif len(self.f_strains) > 1 or len(self.f_timepoints) > 1:
-                        LabelToplevel(master=self,title='Error',
+                        LabelToplevel(master=self, title='Error',
                                       text='Please only use a singular timepoint\n and strain for manual selection')
                     else:
                         self.manual_selection()
@@ -393,7 +404,7 @@ class PlotGUI(ctk.CTk):
             LabelToplevel(master=self, title='Error',
                           text='Please select at least\n one of each parameter')
 
-    def construct_display_frames(self):
+    def initialize_display_frames(self):
         """Uses custom plot function (from helper.py) where each plot for a drug is batched into 4 per frame or 12
          per frame if QuickView switch is selected. User inputs for drugs, strains, and timepoints are used in order to
          filter data that is displayed on the canvas. Method that is called after self.get_user_inputs()."""
@@ -403,9 +414,6 @@ class PlotGUI(ctk.CTk):
         self.progress_bar.update_idletasks()
         self.current_frame_idx = 0
         self.display_frames = dict()
-
-        df = self.df[self.df['Timepoint'].isin(self.f_timepoints)]
-        gr = True if self.dropdown_var.get() == 'Growth rate' else False
 
         # One drug, one plot
         if len(self.f_drugs) == 1:
@@ -419,77 +427,21 @@ class PlotGUI(ctk.CTk):
             case 4:
                 batch_size = 4
                 nrows = ncols = 2
-            case 6:
-                batch_size = 6
-                nrows,ncols = 3,2
-            case 12:
-                batch_size = 12
-                nrows, ncols = 4, 3
+            case 9:
+                batch_size = 9
+                nrows, ncols = 3, 3
+            case 16:
+                batch_size = 16
+                nrows, ncols = 4, 4
 
-        batches = [self.f_drugs[i:i + batch_size] for i in range(0, len(self.f_drugs), batch_size)]
-
-        # Construction of self.display_frames according to user specifications
-        for i, b in enumerate(batches): # each batch is a subplot and a frame
-            fig, axs = plt.subplots(nrows=nrows, ncols=ncols, dpi=95)
-            subplot_rep_locs = {}
-            main_text = r"$\bf{Growth\ rate}$" if gr else r"$\bf{Dose\ response}$"
-
-            plt.suptitle(f'{main_text}\n{" \u2022 ".join(self.f_strains) if self.f_strains != ['EL'] else 'Erdman-Lux'}',
-                         fontname='Arial',fontsize=14, fontstyle='oblique')
-
-            for idx, drug in enumerate(b):
-                if isinstance(axs, np.ndarray):  # checks for existence of subplot
-                    if axs.ndim == 2:  # if more than one row to display plots
-                        flat_axs = axs.flatten()[idx]
-                    else:
-                        flat_axs = axs[idx]
-                else:
-                    flat_axs = axs
-
-                # Subplot specifications depending on plots per frame
-                match num_plots:
-                    case 4:
-                        flat_axs.title.set_fontsize(12)
-                        flat_axs.xaxis.label.set_fontsize(9)
-                        flat_axs.yaxis.label.set_fontsize(9)
-                    case 6:
-                        flat_axs.title.set_fontsize(12)
-                        flat_axs.xaxis.label.set_fontsize(8)
-                        flat_axs.yaxis.label.set_fontsize(8)
-
-                        for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
-                            label.set_fontsize(10)
-                    case 12:
-                        flat_axs.title.set_fontsize(10)
-                        flat_axs.xaxis.label.set_visible(False)
-                        flat_axs.yaxis.label.set_visible(False)
-                        flat_axs.legend(frameon=False, fontsize=7)
-
-                        for label in (flat_axs.get_xticklabels() + flat_axs.get_yticklabels()):
-                            label.set_fontsize(7)
-
-                # Plot and retrieve integer-label (.loc) of replicates
-                rep_locs = plot(df, flat_axs, strains=self.f_strains, drug=drug, timepoints=self.f_timepoints,
-                                subplot=idx, save_type='pdf', gr=gr)
-
-                # Store in a dictionary that maps it to the respective axs obj
-                subplot_rep_locs.update({flat_axs: rep_locs})
-
-            self.update_progress(len(batches))
-
-            plt.subplots_adjust(hspace=0.4, wspace=0.3)
-            frame = PlotFrame(master=self, fig=fig, subplot_rep_locs=subplot_rep_locs)
-
-            if (has_combo := any('+' in d for d in self.f_drugs)):# manual selection is only used for singles
-                frame.ms_condition = False
-
-            plt.close(fig)
-            self.display_frames.update({i: frame})
+        # Each subplot is a unique drug. Strains, timepoints, and replicates are all superimposed.
+        self.construct_frames(batch_size, num_plots, nrows, ncols)
 
         initial_display = self.display_frames[self.current_frame_idx]
         initial_display.toggle_event_listeners(state=True)
         initial_display.tkraise()
         self.subplot_count_sbutton.tkraise()
+        self.partition_plot_switch.tkraise()
         self.pf_button.tkraise()
 
         if self.slide_visible:
@@ -499,16 +451,113 @@ class PlotGUI(ctk.CTk):
 
         return
 
-    def selection_to_pdf(self):
-        """Currently selected checkboxecs are used in order to generate a PDF in which each page is a 1x3 subplot
+    def construct_frames(self, batch_size, num_plots, nrows, ncols):
+        """Superimposed (default) or partitioned plots are batched to frames."""
+
+        # Improve indexing efficiency by subsetting self.df (even though plot() method handles this)
+        df = self.df[self.df['Timepoint'].isin(self.f_timepoints) & (self.df['Strain'].isin(self.f_strains)) &
+                     (self.df['Drug'].isin(self.f_drugs))]
+        gr = True if self.dropdown_var.get() == 'Growth rate' else False
+        partition = self.partition_plot_switch.get()
+
+        if partition:
+            row_indices = df.sort_values(['Strain','Timepoint','Drug']).index  # where each index is a row (and individual plot) for all data to be plotted
+            batches = [row_indices[i:i + batch_size] for i in range(0, len(row_indices), batch_size)]
+        else:
+            batches = [self.f_drugs[i:i + batch_size] for i in range(0, len(self.f_drugs), batch_size)]
+
+        # Construction of self.display_frames according to user specifications
+        for i_frame, batch in enumerate(batches):  # each batch is a subplot and a frame
+            fig, axs = plt.subplots(nrows=nrows, ncols=ncols, dpi=95)
+
+            subplot_rep_locs = {}
+            main_text = r"$\bf{Growth\ rate\ inhibitions}$" if gr else r"$\bf{Dose\ response}$"
+
+            plt.suptitle(
+                f'{main_text}\n{" \u2022 ".join(self.f_strains) if self.f_strains != ["EL"] else "Erdman-Lux"}'
+                f', {" \u2022 ".join(self.f_timepoints)}',
+                fontname='Arial', fontsize=14, fontstyle='oblique')
+
+            if isinstance(axs, np.ndarray):  # checks for existence of subplot
+                flattened_axs = axs.flatten()
+            else:
+                flattened_axs = axs
+            flattened_axs = axs.flatten() if isinstance(axs, np.ndarray) else axs
+
+            for i_element, element in enumerate(batch): # an element is either a drug:str or a pandas.Index for a the .loc of a row
+                subplot_axs = flattened_axs[i_element]
+
+                # Plot and retrieve integer-label (.loc) of replicates
+                if partition:
+                    row = df.loc[element]
+                    drug = row['Drug']
+                    strain = row['Strain']
+                    timepoint = row['Timepoint']
+
+                    rep_locs = plot(df, subplot_axs, drug, strains=[strain], timepoints=[timepoint], row_indices=[element],
+                                    subplot=i_element, save_type='pdf', gr=gr)
+
+                else:
+                    rep_locs = plot(df, subplot_axs, strains=self.f_strains, drug=element, timepoints=self.f_timepoints,
+                                    subplot=i_element, save_type='pdf', gr=gr)
+
+                # Subplot specifications depending on plots per frame
+                self.plot_specifications(subplot_axs, num_plots)
+
+                # Store in a dictionary that maps it to the respective axs obj
+                subplot_rep_locs.update({subplot_axs: rep_locs})
+
+            self.update_progress(len(batches))
+
+            plt.subplots_adjust(hspace=0.4, wspace=0.3)
+            frame = PlotFrame(master=self, fig=fig, subplot_rep_locs=subplot_rep_locs)
+
+            if (has_combo := any('+' in d for d in self.f_drugs)):  # manual selection is only used for singles
+                frame.ms_condition = False
+
+            plt.close(fig)
+            self.display_frames.update({i_frame: frame})
+
+        return
+
+    def plot_specifications(self, axs, num_plots):
+        match num_plots:
+            case 4:
+                axs.title.set_fontsize(14)
+                axs.xaxis.label.set_fontsize(9)
+                axs.yaxis.label.set_fontsize(9)
+            case 9:
+                axs.title.set_fontsize(11)
+                axs.xaxis.label.set_fontsize(8)
+                axs.yaxis.label.set_fontsize(8)
+
+                for label in (axs.get_xticklabels() + axs.get_yticklabels()):
+                    label.set_fontsize(8)
+            case 16:
+                axs.title.set_fontsize(9)
+                axs.xaxis.label.set_visible(False)
+                axs.yaxis.label.set_visible(False)
+                axs.legend(frameon=False, fontsize=10)
+
+                for label in (axs.get_xticklabels() + axs.get_yticklabels()):
+                    label.set_fontsize(6)
+
+        return
+
+    def save_selections(self):
+        """Currently selected checkboxes are used in order to generate a PDF in which each page is a 1x3 subplot
         """
         save_path = Path.home() / 'Downloads'
-        df = self.df[self.df['Timepoint'].isin(self.f_timepoints)]
+        df = self.df[(self.df['Drug'].isin(self.f_drugs)) & (self.df['Strain'].isin(self.f_strains))
+                     & (self.df['Timepoint'].isin(self.f_timepoints))]
+        partition = self.partition_plot_switch.get()
+        save_map = {'Save to PDF': 'pdf', 'Save to PNGs': 'png'}
 
         generate_plot_images(df, drugs=self.f_drugs, strains=self.f_strains, timepoints=self.f_timepoints,
-                             save_path=save_path, save_type='pdf')
-        LabelToplevel(master=self, title='Success', text='Selected plots saved in Downl'
-                                                         'oads')
+                             save_path=save_path, save_type=save_map[self.dropdown_var.get()],
+                             partition=True if partition else False)
+
+        LabelToplevel(master=self, title='Success', text='Selected plots saved in Downloads')
         self.after(50)
 
         return
@@ -523,7 +572,7 @@ class PlotGUI(ctk.CTk):
 
         for frame in self.display_frames.values():
             if hasattr(frame, 'reps_to_remove'):
-                all_reps_to_remove = all_reps_to_remove | frame.reps_to_remove # union of both sets
+                all_reps_to_remove = all_reps_to_remove | frame.reps_to_remove  # union of sets
 
         if all_reps_to_remove:
             for arg in all_reps_to_remove:
@@ -535,11 +584,11 @@ class PlotGUI(ctk.CTk):
 
             # Handles filtering replicates or all combinations containing a certain drug
             empty = pd.Series(False, index=self.df.index)
-            condition3 = self.df.index.isin(row_integer_labels) if row_integer_labels else empty
-            condition4 = self.df['Drug'].str.contains('|'.join(drugs)) if drugs else empty
+            condition3 = self.df.index.isin(row_integer_labels) if row_integer_labels else empty # replicates
+            condition4 = self.df['Drug'].str.contains('|'.join(drugs)) if drugs else empty # single and combos containing drug(s)
 
             self.df['MS_Flag'] = np.nan
-            mask = (condition1 & condition2) & condition3 | condition4 # condition3 or condition4 for single strain and timepoint
+            mask = (condition1 & condition2) & condition3 | condition4  # condition3 or condition4 for single strain and timepoint
             self.df.loc[mask, 'MS_Flag'] = int(1)
             self.df.to_pickle(self.file_path)
 
@@ -565,12 +614,14 @@ class PlotGUI(ctk.CTk):
             current_frame.toggle_event_listeners(state=False)
 
             # Adjust variables and bring new frame into foreground
-            self.current_frame_idx = (self.current_frame_idx+dir_var)%len(self.display_frames) # update to next frame
+            self.current_frame_idx = (self.current_frame_idx + dir_var) % len(
+                self.display_frames)  # update to next frame
             next_frame = self.display_frames[self.current_frame_idx]
             next_frame.toggle_event_listeners(state=True)
 
             next_frame.tkraise()
             self.subplot_count_sbutton.tkraise()
+            self.partition_plot_switch.tkraise()
             self.pf_button.tkraise()
 
             if self.slide_visible:
@@ -596,8 +647,8 @@ class PlotGUI(ctk.CTk):
         return
 
     def destroy_checkboxes(self):
-         """Destroys checkboxes and gets rid of any references."""
-        
+        """Destroys checkboxes and gets rid of any references."""
+
         if hasattr(self, 'checkboxes'):  # destroy checkboxes
             for val in self.checkboxes.values():
                 if isinstance(val, list):
