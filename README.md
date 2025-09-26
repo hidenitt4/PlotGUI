@@ -48,12 +48,24 @@ Last updated: 9/25/25
 
 ### Reference 2<br>
 
-- Most up-to-date version of GUI
-- Segmented button. Current: 12 plot view 
-- Multiple strains selected
-- Parameter frame is currently visible (can be hidden from view using thin gray button)
+- 16 plot view
+- Partitioned
+- Manual selection toplevel and replicate is highlighted red on removal
+- Parameter frame is currently hidden (can be made visible)
+  
 
-<img width="893" height="849" alt="Screenshot 2025-07-30 at 4 38 59 PM" src="https://github.com/user-attachments/assets/b116c8d6-6255-401d-9478-639a1bd8ba4b" />
+<img width="963" height="874" alt="Screenshot 2025-09-25 at 9 38 32 PM" src="https://github.com/user-attachments/assets/c2d64ff2-5221-4818-b197-7b5c45b2822c" />
+
 
 <br>
 
+### Reference 3<br>
+
+- 4 plot view
+- Save to PDF toplevel with options to control output file format 
+
+
+<img width="960" height="872" alt="Screenshot 2025-09-25 at 9 19 27 PM" src="https://github.com/user-attachments/assets/f1e801fc-3f44-4ee8-af1d-663d86f39e2a" />
+
+
+<br>
