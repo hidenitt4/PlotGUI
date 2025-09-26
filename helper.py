@@ -139,7 +139,7 @@ def plot(df: pd.DataFrame, axs: matplotlib.axes.Axes | np.ndarray, drug: str,
 
     return rep_locs
 
-def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=None, gr=False, partition=False):
+def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type, batch_size, gr=False, partition=False):
     """"Generates individual dose response plot as png or as a batch of 3 plots per page in a pdf file
 
         Keyword arguments:
@@ -149,11 +149,15 @@ def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=No
         :param save_path: file path to save png images (pathlib obj)
     """
     save_path = Path(save_path)
-    row_indices = df.sort_values(['Strain', 'Timepoint',
-                                  'Drug']).index  # where each index is a row (and individual plot) for all data to be plotted
+    row_indices = df.index  # where each index is a row (and individual plot) for all data to be plotted
 
     if save_type == 'pdf':
-        batch_size = 3
+        if batch_size == 2:
+            fig_size = (10, 4)
+        elif batch_size == 3:
+            fig_size = (15, 4)
+        else:
+            fig_size = ((15+(7.5*(batch_size-3))), 4)
 
         if partition:
             batches = [row_indices[i:i + batch_size] for i in range(0, len(row_indices), batch_size)]
@@ -162,7 +166,7 @@ def generate_plot_images(df, drugs, strains, timepoints, save_path, save_type=No
 
         with PdfPages(unique_filename(save_path / 'hillcurves.pdf')) as pdf:
             for b in batches:  # each batch is a page on the pdf
-                fig, axs = plt.subplots(nrows=1, ncols=3, facecolor='white', figsize=(15, 4))
+                fig, axs = plt.subplots(nrows=1, ncols=batch_size, facecolor='white', figsize=fig_size)
                 axs = axs.flatten() if isinstance(axs, np.ndarray) else axs
                 plt.suptitle(f'Dose Response Curves for {", ".join(strains)}')
 

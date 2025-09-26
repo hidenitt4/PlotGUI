@@ -25,7 +25,7 @@ import pandas as pd
 import numpy as np
 import gc, os, subprocess
 from helper import plot, generate_plot_images
-from custom_widgets import PlotFrame, ParameterCheckbox, MSToplevel, LabelToplevel, SlidingButton, SlidingFrame
+from custom_widgets import PlotFrame, ParameterCheckbox, PDFToplevel, LabelToplevel, SlidingButton, SlidingFrame
 
 ctk.set_appearance_mode('light')
 ctk.set_default_color_theme('green')
@@ -201,7 +201,7 @@ class PlotGUI(ctk.CTk):
         self.file_button = ctk.CTkButton(master=self.action_frame, text='Select file',
                                          command=lambda: self.load_file(),
                                          fg_color='gray', width=25,
-                                         hover_color='gray20')
+                                         hover_color='gray30')
         self.file_button.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
 
         # Generation frame (contains dropdown menu and create plot button)
@@ -215,10 +215,10 @@ class PlotGUI(ctk.CTk):
         self.dropdown_var = ctk.StringVar(value="Dose response")
 
         dropdown_options = ['Dose response', 'Growth rate', 'Save to PDF', 'Save to PNGs', 'Manual selection']
-        self.dropdowns = ctk.CTkOptionMenu(master=self.generation_frame,
+        self.dropdown = ctk.CTkOptionMenu(master=self.generation_frame,
                                            values=dropdown_options,
                                            variable=self.dropdown_var)
-        self.dropdowns.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky='ew')
+        self.dropdown.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky='ew')
 
         # Create plot button
         self.create_plot_button = ctk.CTkButton(master=self.generation_frame, text='Run',
@@ -280,7 +280,7 @@ class PlotGUI(ctk.CTk):
             self.parameter_frame.tkraise()
 
         if self.file_path:
-            self.file_button.configure(text='File selected', fg_color='gray26')
+            self.file_button.configure(text='File selected', fg_color='gray30')
 
             self.df = pd.read_pickle(self.file_path)
             self.df_drugs = self.df['Drug'].unique()
@@ -386,7 +386,11 @@ class PlotGUI(ctk.CTk):
                     self.initialize_display_frames()
 
                 case 'Save to PDF' | 'Save to PNGs':
-                    self.save_selections()
+                    self.get_user_inputs()
+                    can_superimpose= ((len(self.f_strains) > 1 or len(self.f_timepoints) > 1) and not
+                    (len(self.f_strains) > 1 and len(self.f_timepoints) > 1))
+                    PDFToplevel(master=self,title='Save to PDF', callback=self.receive_PDF_callback,
+                                restrictions = can_superimpose)
 
                 case 'Manual select.':
                     self.get_user_inputs()
@@ -543,19 +547,36 @@ class PlotGUI(ctk.CTk):
                     label.set_fontsize(6)
 
         return
+    def prerun_specifications(self):
+        return
 
-    def save_selections(self):
+    def receive_PDF_callback(self, fromToplevel):
+        callback_dict = fromToplevel
+        groupings = callback_dict['groupings']
+        gr, partition, batch_size = callback_dict['gr'], callback_dict['partition'], callback_dict['batch_size']
+
+        if groupings.count('None') == 3:
+            groupings = ['Strain','Timepoint','Drug'] # default settings
+        else:
+            groupings = [x for x in groupings if x!= 'None']
+
+        self.save_selections(groupings, gr, partition, batch_size)
+
+        return
+
+    def save_selections(self, groupings, gr, partition, batch_size):
         """Currently selected checkboxes are used in order to generate a PDF in which each page is a 1x3 subplot
         """
+
         save_path = Path.home() / 'Downloads'
         df = self.df[(self.df['Drug'].isin(self.f_drugs)) & (self.df['Strain'].isin(self.f_strains))
                      & (self.df['Timepoint'].isin(self.f_timepoints))]
-        partition = self.partition_plot_switch.get()
+        df = df.sort_values(groupings)
         save_map = {'Save to PDF': 'pdf', 'Save to PNGs': 'png'}
 
         generate_plot_images(df, drugs=self.f_drugs, strains=self.f_strains, timepoints=self.f_timepoints,
-                             save_path=save_path, save_type=save_map[self.dropdown_var.get()],
-                             partition=True if partition else False)
+                             save_path=save_path, save_type=save_map[self.dropdown_var.get()], batch_size=batch_size,
+                             gr=gr, partition=partition)
 
         LabelToplevel(master=self, title='Success', text='Selected plots saved in Downloads')
         self.after(50)

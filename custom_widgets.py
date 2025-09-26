@@ -9,7 +9,6 @@ from mplcursors import cursor
 
 # make sure to destroy textbox once created...
 
-
 class PlotFrame(ctk.CTkFrame):
     """Frame that contains the id/location for the respective data that is displayed on subplots (or a plot in the case
     of a single drug selection). Also serves as master for MSToplevel object through which receives replicates selected
@@ -261,7 +260,7 @@ class MSToplevel(ctk.CTkToplevel):
 
         for i in range(num_of_reps+1):
             if i == num_of_reps:
-                self.close_button = ctk.CTkButton(master=self, text='Select for removal', width=20, command=self.destroy)
+                self.close_button = ctk.CTkButton(master=self, text='Select for removal', width=20, command=lambda: self.destroy())
                 self.close_button.grid(row=i, column=0, padx=5, pady=5)
 
             elif num_of_reps <=3:
@@ -298,11 +297,10 @@ class MSToplevel(ctk.CTkToplevel):
         changes canvas color to indicate any selection that was made. For the case of PlotFrame destruction,
          any references that might prevent garbage collection are also removed."""
 
-        if self.winfo_exists():
+        if self.winfo_exists(): # does the toplevel still exist
             self.unbind('<FocusOut>')
 
         # Tuple format where 0 indicates no selection and 1 indicates a selection.
-
         if self.axs:
             if any(self.get_selections()):
                 self.axs.set_facecolor('#FFB3B3')
@@ -323,6 +321,107 @@ class MSToplevel(ctk.CTkToplevel):
 
         return
 
+class PDFToplevel(ctk.CTkToplevel):
+    """PDF specifications"""
+
+    def __init__(self, master, title, callback, restrictions):
+        super().__init__(master)
+        master.update_idletasks()
+        self.update_idletasks()
+        center_x = (master.winfo_x() + master.winfo_width() // 2 - self.winfo_width() // 2)
+        center_y = (master.winfo_y() + master.winfo_height() // 2 - self.winfo_height() // 2)
+
+        self.geometry(f"+{center_x}+{center_y}")
+        self.title(title)
+        self.callback = callback
+        self.can_superimpose = restrictions
+        self.grid_rowconfigure(index=(0,1,2,3,4,5,6,7), weight=1)
+        self.grid_columnconfigure(index=(0,1), weight=1)
+
+        # Choose grouping of strain, drug, and timepoint
+        self.grouping_label = ctk.CTkLabel(self, text=f'Grouping',font=("Arial", 14, "bold"))
+        self.grouping_label.grid(row=0, column=0, columnspan=2, padx=5, pady=7, sticky='ew')
+
+        grouping_options = ['Strain','Drug','Timepoint','None']
+
+        self.grouping_1_var =  ctk.StringVar(value='None')
+        self.grouping_1 = ctk.CTkOptionMenu(master=self,values=grouping_options,
+                                            command=lambda event: self.check_grouping_selections(),
+                                            variable=self.grouping_1_var)
+        self.grouping_1.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+
+        self.grouping_2_var = ctk.StringVar(value='None')
+        self.grouping_2 = ctk.CTkOptionMenu(master=self, values=grouping_options,
+                                            command=lambda event: self.check_grouping_selections(),
+                                            variable=self.grouping_2_var)
+        self.grouping_2.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+
+        self.grouping_3_var = ctk.StringVar(value='None')
+        self.grouping_3 = ctk.CTkOptionMenu(master=self, values=grouping_options,
+                                            command=lambda event: self.check_grouping_selections(),
+                                            variable=self.grouping_3_var)
+        self.grouping_3.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+        # Other options for PDF (batch_size, gr, and partition)
+        self.others_label = ctk.CTkLabel(self, text=f'Other options', font=("Arial", 14, "bold"))
+        self.others_label.grid(row=4, column=0, columnspan=2, padx=5, pady=7, sticky='ew')
+
+        self.gr_var = ctk.BooleanVar()
+        self.gr_checkbox = ctk.CTkCheckBox(master=self, variable=self.gr_var, text='GR', text_color='#455669')
+        self.gr_checkbox.grid(row=5, column=0, padx=15, pady=5)
+
+        self.partition_var = ctk.BooleanVar()
+        self.partition_checkbox = ctk.CTkCheckBox(master=self, variable=self.partition_var, text='Partition',
+                                                  command=self.check_grouping_selections,
+                                                  text_color='#455669')
+        self.partition_checkbox.grid(row=5, column=1, padx=15, pady=5)
+
+        self.slider_var = ctk.IntVar(value=2)
+        self.batch_slider = ctk.CTkSlider(master=self, from_=2, to=20, number_of_steps=18, variable=self.slider_var)
+        self.batch_slider.grid(row=6, column=0, columnspan=2, padx=10, pady=20)
+
+        self.update_idletasks()
+        slider_x = (self.batch_slider.winfo_x())
+        slider_y = (self.batch_slider.winfo_y())
+
+        self.slider_label = ctk.CTkLabel(self, textvariable=self.slider_var, font=("Arial", 10))
+        self.slider_label.place(x=(self.winfo_width() // 2)-6, y=(slider_y-29))
+
+        # Generate PDF
+        self.generate_button = ctk.CTkButton(master=self, text='Generate PDF', command=self.generate_pdf, fg_color='gray', hover_color='gray30')
+        self.generate_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+
+        self.bind('<FocusOut>', lambda event: self.destroy())
+        self.check_grouping_selections()
+
+    def generate_pdf(self):
+        """"""
+
+        g1, g2, g3 = self.grouping_1_var.get(), self.grouping_2_var.get(), self.grouping_3_var.get()
+        gr, partition, batch_size = self.gr_var.get(), self.partition_var.get(), self.slider_var.get()
+        callback_dict = {'groupings':[g1, g2, g3], 'gr': gr, 'partition': partition, 'batch_size': batch_size}
+
+        self.callback(callback_dict)
+        self.destroy()
+
+    def check_grouping_selections(self):
+        """"""
+
+        g1, g2, g3 = self.grouping_1_var.get(), self.grouping_2_var.get(), self.grouping_3_var.get()
+        f_groupings = [g for g in [g1, g2, g3] if g!='None']
+        no_duplicates = len(f_groupings) == len(set(f_groupings))
+
+        if not no_duplicates:
+            self.generate_button.configure(state=ctk.DISABLED)
+            return False
+
+        # Disable if partition is off and it can't be superimposed
+        if not self.can_superimpose and not self.partition_var.get():
+            self.generate_button.configure(state=ctk.DISABLED)
+            return False
+
+        self.generate_button.configure(state=ctk.NORMAL)
+        return True
 
 class LabelToplevel(ctk.CTkToplevel):
     """Basic toplevel widget to display a specified message upon creation."""
@@ -330,9 +429,8 @@ class LabelToplevel(ctk.CTkToplevel):
     def __init__(self, master, title, text):
         super().__init__(master)
         self.title(title)
-
         master.update_idletasks()
-
+        self.update_idletasks()
         center_x = (master.winfo_x() + master.winfo_width() // 2 - self.winfo_width() // 2)
         center_y = (master.winfo_y() + master.winfo_height() // 2 - self.winfo_height() // 2)
 
