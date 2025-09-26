@@ -1,48 +1,48 @@
 # PlotGUI (beta-version)
 Visualization GUI that takes MK DiaMOND pickle (.pkl) file output. <br>
 Internal name: "Margarine", sister product of "Butter" <br>
-Last updated: 7/3/25
+Last updated: 9/25/25
 
 ----------------
 
 ### Features:
-* View dose response or growth rate curves
+* View dose response or growth rate inhibition curves
   * Overlay multiple strains or timepoints on a single plot
-  * Segmented button to to see 4, 6, or 12 plots at a time (with varying mplcursors functionality)
-  * Annotations on click 
+  * Segmented button to to see 4, 9, or 16 plots at a time
+  * Annotations on click
+  * Partition elements of curves to single plot view 
 
-* Selection to PDF feature
+* Selection to PDF or PNG(s) feature
+  * Edit grouping preferences, view GR, partition plots, and control batch size of PDF file
 
-* Manual selection feature on double-click (for DiaMOND)
+* Manual selection feature on double-click (to exclude certain replicates from DiaMOND analysis)
 
 ----------------
 
 ### Keybinds and additional notes:
 * L/R arrow to navigate between display frames
 * D arrow to clear any visible plots and return to default state of GUI
-* Thin gray button at the bottom of page can be used in order to slide parameter frame into view
-* Multiple strains OR multiple timepoints can be selected but not both
-* For Manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
+* Spacebar to lift parameter frame into view (or click on thin gray button on the bottom of the page)
+* Multiple strains OR multiple timepoints can be selected (not multiple of both)
+* For manual selection, in the case of Algo is None, that rep will not be added to MS_Flag. 
 
 ### Known bugs (to be fixed):
 * Clearing memory may still not be perfectly handled
 * If file is already selected and one clicks the file button again without selecting a file, may cause error.
 * Use of plt.subplots when selecting individual drug instead of plt.figure
-* Selection to PDF only saves dose response curves and not growth rate
-* r/f-strings string delimiter conflict
-  
+* Possible r/f-strings string delimiter conflict
+
   
 ----------------
 
 ### Reference 1<br>
 
-- Previous, but still relevant version of GUI (QuickView is replaced by segmented button to select either 4, 6, or 12 plot views)
-- QuickView is off. Default: 4 plot view 
-- Manual selection Toplevel and facecolor change on selection 
+- 9 plot view 
+- Multiple strains are superimposed for easy comparison 
 - Annotation on click
-- Parameter frame is currently hidden (can be made visible using thin gray button)
+- Parameter frame is currently visible (and can be hidden)
 
-![Screenshot 2025-06-30 at 6 45 21 PM](https://github.com/user-attachments/assets/a8c19272-3f8e-468a-8900-0c32c94fcceb)
+<img width="748" height="678" alt="Screenshot 2025-09-25 at 9 15 54 PM" src="https://github.com/user-attachments/assets/640331d0-aa31-4d58-af05-9abdd95016ad" />
 
 <br>
 
