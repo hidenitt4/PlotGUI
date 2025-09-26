@@ -42,7 +42,7 @@ Last updated: 9/25/25
 - Annotation on click
 - Parameter frame is currently visible (and can be hidden)
 
-<img width="748" height="678" alt="Screenshot 2025-09-25 at 9 15 54 PM" src="https://github.com/user-attachments/assets/640331d0-aa31-4d58-af05-9abdd95016ad" />
+<img width="750" height="675" alt="Screenshot 2025-09-25 at 9 15 54 PM" src="https://github.com/user-attachments/assets/640331d0-aa31-4d58-af05-9abdd95016ad" />
 
 <br>
 
@@ -54,7 +54,7 @@ Last updated: 9/25/25
 - Parameter frame is currently hidden (can be made visible)
   
 
-<img width="963" height="874" alt="Screenshot 2025-09-25 at 9 38 32 PM" src="https://github.com/user-attachments/assets/c2d64ff2-5221-4818-b197-7b5c45b2822c" />
+<img width="750" height="675" alt="Screenshot 2025-09-25 at 9 38 32 PM" src="https://github.com/user-attachments/assets/c2d64ff2-5221-4818-b197-7b5c45b2822c" />
 
 
 <br>
@@ -65,7 +65,7 @@ Last updated: 9/25/25
 - Save to PDF toplevel with options to control output file format 
 
 
-<img width="960" height="872" alt="Screenshot 2025-09-25 at 9 19 27 PM" src="https://github.com/user-attachments/assets/f1e801fc-3f44-4ee8-af1d-663d86f39e2a" />
+<img width="750" height="675" alt="Screenshot 2025-09-25 at 9 19 27 PM" src="https://github.com/user-attachments/assets/f1e801fc-3f44-4ee8-af1d-663d86f39e2a" />
 
 
 <br>
